@@ -33,6 +33,7 @@ data class LapRecordEntity(
     val lapDistanceMeters: Double,
     val movingTimeMillis: Long,
     val stoppedTimeMillis: Long,
+    val maxSpeedMps: Double = 0.0,
 )
 
 @Entity(

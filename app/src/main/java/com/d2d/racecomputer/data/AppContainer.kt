@@ -3,6 +3,7 @@ package com.d2d.racecomputer.data
 import android.content.Context
 import androidx.room.Room
 import com.d2d.racecomputer.core.data.db.RaceDatabase
+import com.d2d.racecomputer.core.data.db.RaceDatabaseMigrations
 import com.d2d.racecomputer.core.data.repo.RaceRepository
 import com.d2d.racecomputer.core.domain.model.RaceSettings
 import com.d2d.racecomputer.core.location.RaceRuntime
@@ -18,7 +19,9 @@ object AppContainer {
             context.applicationContext,
             RaceDatabase::class.java,
             "d2d_race.db",
-        ).build()
+        )
+            .addMigrations(RaceDatabaseMigrations.MIGRATION_1_2)
+            .build()
         raceRepository = RaceRepository(db.raceDao())
         RaceRuntime.initialize(
             raceRepository,

@@ -55,6 +55,7 @@ class RaceRepository(private val raceDao: RaceDao) {
                 lapDistanceMeters = lap.lapDistanceMeters,
                 movingTimeMillis = lap.movingTimeMillis,
                 stoppedTimeMillis = lap.stoppedTimeMillis,
+                maxSpeedMps = lap.maxSpeedMps,
             ),
         )
     }

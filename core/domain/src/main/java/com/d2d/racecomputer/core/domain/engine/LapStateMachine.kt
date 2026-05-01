@@ -5,6 +5,7 @@ import com.d2d.racecomputer.core.domain.model.GpsSample
 import com.d2d.racecomputer.core.domain.model.LapRecord
 import com.d2d.racecomputer.core.domain.model.RaceSettings
 import com.d2d.racecomputer.core.domain.model.RaceSnapshot
+import kotlin.math.abs
 
 class LapStateMachine(private val settings: RaceSettings) {
     private var startedAtMillis: Long? = null
@@ -17,6 +18,7 @@ class LapStateMachine(private val settings: RaceSettings) {
     private var currentLapDistanceMeters = 0.0
     private var movingCurrentLapMillis = 0L
     private var stoppedCurrentLapMillis = 0L
+    private var maxSpeedCurrentLapMps = 0.0
     private var laps = mutableListOf<LapRecord>()
 
     fun start(startMillis: Long) {
@@ -29,6 +31,9 @@ class LapStateMachine(private val settings: RaceSettings) {
         if (sample.accuracyMeters > settings.maxGpsAccuracyMeters) {
             return snapshot(sample.timestampMillis - start)
         }
+        val spd = abs(sample.speedMps).coerceAtLeast(0.0)
+        if (spd > maxSpeedCurrentLapMps) maxSpeedCurrentLapMps = spd
+
         val prev = previousSample
         if (prev != null && sample.timestampMillis > prev.timestampMillis) {
             val segment = GeoMath.distanceMeters(prev.latitude, prev.longitude, sample.latitude, sample.longitude)
@@ -81,12 +86,14 @@ class LapStateMachine(private val settings: RaceSettings) {
             lapDistanceMeters = currentLapDistanceMeters,
             movingTimeMillis = movingCurrentLapMillis,
             stoppedTimeMillis = stoppedCurrentLapMillis,
+            maxSpeedMps = maxSpeedCurrentLapMps,
         )
         lapStartMillis = nowMillis
         lastLapCrossingMillis = nowMillis
         currentLapDistanceMeters = 0.0
         movingCurrentLapMillis = 0L
         stoppedCurrentLapMillis = 0L
+        maxSpeedCurrentLapMps = 0.0
         leftZoneSinceLastLap = false
     }
 
@@ -99,11 +106,13 @@ class LapStateMachine(private val settings: RaceSettings) {
             lapDistanceMeters = currentLapDistanceMeters,
             movingTimeMillis = movingCurrentLapMillis,
             stoppedTimeMillis = stoppedCurrentLapMillis,
+            maxSpeedMps = maxSpeedCurrentLapMps,
         )
         lapStartMillis = nowMillis
         currentLapDistanceMeters = 0.0
         movingCurrentLapMillis = 0L
         stoppedCurrentLapMillis = 0L
+        maxSpeedCurrentLapMps = 0.0
         leftZoneSinceLastLap = false
         lastLapCrossingMillis = nowMillis
     }

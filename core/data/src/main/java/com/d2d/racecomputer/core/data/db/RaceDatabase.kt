@@ -18,7 +18,7 @@ import com.d2d.racecomputer.core.data.db.entities.StopEventEntity
         PitNoteEntity::class,
         AppSettingsEntity::class,
     ],
-    version = 1,
+    version = 2,
 )
 abstract class RaceDatabase : RoomDatabase() {
     abstract fun raceDao(): RaceDao

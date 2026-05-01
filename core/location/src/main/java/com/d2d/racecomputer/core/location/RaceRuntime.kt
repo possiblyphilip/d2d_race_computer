@@ -6,6 +6,7 @@ import com.d2d.racecomputer.core.domain.engine.StopDetector
 import com.d2d.racecomputer.core.domain.model.GpsSample
 import com.d2d.racecomputer.core.domain.model.RaceSettings
 import com.d2d.racecomputer.core.domain.model.RaceSnapshot
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -77,10 +78,12 @@ object RaceRuntime {
         val stop = stopDetector?.onSample(sample) ?: false
         val snap = lapStateMachine?.onSample(sample, stop) ?: return
         val detector = stopDetector
+        val speedMps = abs(sample.speedMps).coerceAtLeast(0.0)
         _snapshot.value = snap.copy(
             stopStats = detector?.snapshot() ?: snap.stopStats,
             isCurrentlyStopped = detector?.isCurrentlyStopped() == true,
             currentStopDurationMillis = detector?.currentStopDurationMillis(sample.timestampMillis) ?: 0L,
+            currentSpeedMps = speedMps,
         )
         scope.launch {
             repository.queueGps(sample)

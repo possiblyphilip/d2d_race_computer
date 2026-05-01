@@ -17,13 +17,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d2d.racecomputer.ui.RaceViewModel
+import com.d2d.racecomputer.ui.formatSpeedKmhOneDecimal
 import com.d2d.racecomputer.ui.metersToKm
 import com.d2d.racecomputer.ui.toClock
 import kotlinx.coroutines.delay
@@ -95,32 +98,78 @@ fun RaceScreen(
             )
         }
 
-        Text("Lap Log", style = MaterialTheme.typography.titleLarge)
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            items(snapshot.laps) { lap ->
-                Text(
-                    "Lap ${lap.lapNumber}  |  ${lap.lapTimeMillis.toClock()}  |  ${lap.lapDistanceMeters.metersToKm()}  |  Stopped ${lap.stoppedTimeMillis.toClock()}",
-                )
-            }
-            item {
-                Text(
-                    "Lap ${snapshot.lapNumber} (in progress)  |  ${liveCurrentLapMillis.toClock()}  |  ${snapshot.currentLapDistanceMeters.metersToKm()}  |  Stopped ${snapshot.stoppedTimeCurrentLapMillis.toClock()}",
-                )
+        if (snapshot.isCurrentlyStopped) {
+            StoppedTakeover(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                stopDuration = liveCurrentStopMillis.toClock(),
+            )
+        } else {
+            Text("Lap Log", style = MaterialTheme.typography.titleLarge)
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                items(snapshot.laps) { lap ->
+                    Text(
+                        "Lap ${lap.lapNumber}  |  ${lap.lapTimeMillis.toClock()}  |  ${lap.lapDistanceMeters.metersToKm()}  |  Stopped ${lap.stoppedTimeMillis.toClock()}",
+                    )
+                }
+                item {
+                    Text(
+                        "Lap ${snapshot.lapNumber} (in progress)  |  ${liveCurrentLapMillis.toClock()}  |  ${snapshot.currentLapDistanceMeters.metersToKm()}  |  Stopped ${snapshot.stoppedTimeCurrentLapMillis.toClock()}",
+                    )
+                }
             }
         }
-        Button(onClick = {
-            vm.endRace()
-            onFinishRace()
-        }) { Text("End Race") }
 
-        if (snapshot.isCurrentlyStopped) {
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                vm.endRace()
+                onFinishRace()
+            },
+        ) { Text("End Race") }
+
+        if (!snapshot.isCurrentlyStopped) {
             StatBox(
                 modifier = Modifier.fillMaxWidth(),
-                label = "Stopped",
-                value = liveCurrentStopMillis.toClock(),
+                label = "Speed",
+                value = "${formatSpeedKmhOneDecimal(snapshot.currentSpeedMps * 3.6)} km/h",
+            )
+        }
+    }
+}
+
+@Composable
+private fun StoppedTakeover(
+    modifier: Modifier = Modifier,
+    stopDuration: String,
+) {
+    Card(
+        modifier = modifier,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "Stopped",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stopDuration,
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 84.sp),
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
             )
         }
     }

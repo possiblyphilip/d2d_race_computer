@@ -28,7 +28,18 @@ data class LapRecord(
     val lapDistanceMeters: Double,
     val movingTimeMillis: Long,
     val stoppedTimeMillis: Long,
-)
+    /** Peak reported GPS speed during the lap (m/s); coerced ≥ 0. */
+    val maxSpeedMps: Double = 0.0,
+) {
+    /** Average speed over wall-clock lap time (km/h); null if lap time is zero. */
+    fun averageSpeedKmh(): Double? {
+        if (lapTimeMillis <= 0L) return null
+        val mps = lapDistanceMeters / (lapTimeMillis / 1000.0)
+        return mps * 3.6
+    }
+
+    fun maxSpeedKmh(): Double = maxOf(0.0, maxSpeedMps) * 3.6
+}
 
 data class StopStats(
     val totalStoppedMillis: Long = 0L,
@@ -51,4 +62,6 @@ data class RaceSnapshot(
     val averageLapTimeMillis: Long? = null,
     val isCurrentlyStopped: Boolean = false,
     val currentStopDurationMillis: Long = 0L,
+    /** Latest GPS-derived speed from the most recent fix (m/s); UI typically shows km/h. */
+    val currentSpeedMps: Double = 0.0,
 )
