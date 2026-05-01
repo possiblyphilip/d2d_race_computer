@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+**/build/
+
+# Local SDK path (never commit)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Outputs & caches
+captures/
+.kotlin/
+.externalNativeBuild/
+.cxx/
+
+*.apk
+*.aab
+
+# Misc
+.DS_Store
