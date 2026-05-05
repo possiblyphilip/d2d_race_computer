@@ -20,7 +20,10 @@ object AppContainer {
             RaceDatabase::class.java,
             "d2d_race.db",
         )
-            .addMigrations(RaceDatabaseMigrations.MIGRATION_1_2)
+            .addMigrations(
+                RaceDatabaseMigrations.MIGRATION_1_2,
+                RaceDatabaseMigrations.MIGRATION_2_3,
+            )
             .build()
         raceRepository = RaceRepository(db.raceDao())
         RaceRuntime.initialize(

@@ -24,8 +24,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.d2d.racecomputer.ui.RaceLogListRow
 import com.d2d.racecomputer.ui.RaceViewModel
+import com.d2d.racecomputer.ui.activityRaceViewModel
+import com.d2d.racecomputer.ui.chronologicalRaceLog
 import com.d2d.racecomputer.ui.formatSpeedKmhOneDecimal
 import com.d2d.racecomputer.ui.metersToKm
 import com.d2d.racecomputer.ui.toClock
@@ -34,10 +36,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun RaceScreen(
     onFinishRace: () -> Unit,
-    vm: RaceViewModel = viewModel(),
+    vm: RaceViewModel = activityRaceViewModel(),
 ) {
     val snapshot by vm.snapshot.collectAsStateWithLifecycle()
-    val estimatedLapsRemaining = vm.estimateLapsRemaining()
 
     val tickNowMillis = remember { mutableLongStateOf(System.currentTimeMillis()) }
     val remainingBaseMillis = remember { mutableLongStateOf(vm.raceTimeRemainingMillis()) }
@@ -81,6 +82,8 @@ fun RaceScreen(
         0L
     }
 
+    val estimatedLapsRemaining = vm.estimateLapsRemaining(liveRemainingMillis, liveCurrentLapMillis)
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -94,7 +97,7 @@ fun RaceScreen(
             StatBox(
                 modifier = Modifier.weight(1f),
                 label = "Laps Remaining",
-                value = estimatedLapsRemaining.toString(),
+                value = estimatedLapsRemaining,
             )
         }
 
@@ -104,15 +107,23 @@ fun RaceScreen(
                 stopDuration = liveCurrentStopMillis.toClock(),
             )
         } else {
-            Text("Lap Log", style = MaterialTheme.typography.titleLarge)
+            Text("Race log", style = MaterialTheme.typography.titleLarge)
+            val logRows = remember(snapshot.laps, snapshot.pitStops) { snapshot.chronologicalRaceLog() }
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(snapshot.laps) { lap ->
-                    Text(
-                        "Lap ${lap.lapNumber}  |  ${lap.lapTimeMillis.toClock()}  |  ${lap.lapDistanceMeters.metersToKm()}  |  Stopped ${lap.stoppedTimeMillis.toClock()}",
-                    )
+                items(logRows) { row ->
+                    when (row) {
+                        is RaceLogListRow.LapRow -> Text(
+                            "Lap ${row.lap.lapNumber}  |  ${row.lap.lapTimeMillis.toClock()}  |  ${row.lap.lapDistanceMeters.metersToKm()}  |  Stopped ${row.lap.stoppedTimeMillis.toClock()}",
+                        )
+                        is RaceLogListRow.PitRow -> Text(
+                            "Pit ${row.pit.pitNumber}  |  outside start zone ${row.pit.durationMillis.toClock()}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
                 }
                 item {
                     Text(

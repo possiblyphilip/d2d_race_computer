@@ -4,8 +4,10 @@ import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.d2d.racecomputer.core.domain.engine.estimateLapsRemainingAtRecentPace
 import com.d2d.racecomputer.core.domain.model.RaceSettings
 import com.d2d.racecomputer.core.domain.model.RaceSnapshot
+import java.util.Locale
 import com.d2d.racecomputer.core.location.RaceLocationService
 import com.d2d.racecomputer.core.location.RaceRuntime
 import kotlinx.coroutines.flow.SharingStarted
@@ -63,11 +65,21 @@ class RaceViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun estimateLapsRemaining(): Int {
-        val elapsed = snapshot.value.elapsedMillis
-        val avg = snapshot.value.averageLapTimeMillis ?: return 0
-        val remaining = (settings.raceDurationMillis - elapsed).coerceAtLeast(0L)
-        return if (avg > 0) (remaining / avg).toInt() else 0
+    /**
+     * Full laps at recent pace still in budget **after** the current lap (steady during the lap;
+     * uses wall [RaceSnapshot.currentLapTimeMillis] when [currentLapElapsedMillis] is null).
+     * @param remainingMillis if null, derived from race duration and snapshot elapsed time.
+     */
+    fun estimateLapsRemaining(
+        remainingMillis: Long? = null,
+        currentLapElapsedMillis: Long? = null,
+    ): String {
+        val snap = snapshot.value
+        val remaining = remainingMillis
+            ?: (settings.raceDurationMillis - snap.elapsedMillis).coerceAtLeast(0L)
+        val lapElapsed = currentLapElapsedMillis ?: snap.currentLapTimeMillis
+        val est = estimateLapsRemainingAtRecentPace(remaining, snap.laps, lapElapsed) ?: return "—"
+        return String.format(Locale.US, "%.1f", est)
     }
 
     fun raceTimeRemainingMillis(): Long {

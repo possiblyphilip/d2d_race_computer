@@ -9,12 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d2d.racecomputer.ui.RaceViewModel
+import com.d2d.racecomputer.ui.activityRaceViewModel
 import com.d2d.racecomputer.ui.metersToKm
 
 @Composable
-fun DiagnosticsScreen(vm: RaceViewModel = viewModel()) {
+fun DiagnosticsScreen(vm: RaceViewModel = activityRaceViewModel()) {
     val snap = vm.snapshot.collectAsStateWithLifecycle().value
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),

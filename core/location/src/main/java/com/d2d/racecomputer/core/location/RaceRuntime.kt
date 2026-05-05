@@ -13,12 +13,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 object RaceRuntime {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _snapshot = MutableStateFlow(RaceSnapshot())
     val snapshot: StateFlow<RaceSnapshot> = _snapshot.asStateFlow()
+
+    private val _raceActive = MutableStateFlow(false)
+    val raceActive: StateFlow<Boolean> = _raceActive.asStateFlow()
 
     lateinit var repository: RaceRepository
         private set
@@ -28,6 +32,7 @@ object RaceRuntime {
     private var settings: RaceSettings = RaceSettings(0.0, 0.0)
     private var running = false
     private var lastSavedLapNumber = 0
+    private var lastSavedPitNumber = 0
 
     fun initialize(repo: RaceRepository, initialSettings: RaceSettings) {
         repository = repo
@@ -50,13 +55,17 @@ object RaceRuntime {
         lapStateMachine = lapMachine
         stopDetector = StopDetector(settings)
         running = true
+        _raceActive.value = true
         lastSavedLapNumber = 0
+        lastSavedPitNumber = 0
         scope.launch { repository.startRace(nowMillis) }
     }
 
     fun endRace(nowMillis: Long) {
         stopDetector?.finalizeStop(nowMillis)
         running = false
+        _raceActive.value = false
+        _snapshot.update { it.copy(isInStartFinishZone = false) }
         scope.launch { repository.endRace(nowMillis) }
     }
 
@@ -91,6 +100,11 @@ object RaceRuntime {
             if (latestLap != null && latestLap.lapNumber > lastSavedLapNumber) {
                 repository.saveLap(latestLap)
                 lastSavedLapNumber = latestLap.lapNumber
+            }
+            val latestPit = snap.pitStops.lastOrNull()
+            if (latestPit != null && latestPit.pitNumber > lastSavedPitNumber) {
+                repository.savePitStop(latestPit)
+                lastSavedPitNumber = latestPit.pitNumber
             }
         }
     }

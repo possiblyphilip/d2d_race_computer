@@ -8,6 +8,7 @@ import com.d2d.racecomputer.core.data.db.entities.AppSettingsEntity
 import com.d2d.racecomputer.core.data.db.entities.GpsPointEntity
 import com.d2d.racecomputer.core.data.db.entities.LapRecordEntity
 import com.d2d.racecomputer.core.data.db.entities.PitNoteEntity
+import com.d2d.racecomputer.core.data.db.entities.PitStopEntity
 import com.d2d.racecomputer.core.data.db.entities.RaceSessionEntity
 import com.d2d.racecomputer.core.data.db.entities.StopEventEntity
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,9 @@ interface RaceDao {
 
     @Insert
     suspend fun insertPitNote(note: PitNoteEntity)
+
+    @Insert
+    suspend fun insertPitStop(pit: PitStopEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSettings(settings: AppSettingsEntity)

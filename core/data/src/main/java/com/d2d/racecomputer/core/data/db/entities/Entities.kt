@@ -34,6 +34,27 @@ data class LapRecordEntity(
     val movingTimeMillis: Long,
     val stoppedTimeMillis: Long,
     val maxSpeedMps: Double = 0.0,
+    val completedAtMillis: Long = 0L,
+)
+
+@Entity(
+    tableName = "pit_stops",
+    foreignKeys = [
+        ForeignKey(
+            entity = RaceSessionEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["raceId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("raceId")],
+)
+data class PitStopEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val raceId: Long,
+    val pitNumber: Int,
+    val durationMillis: Long,
+    val completedAtMillis: Long,
 )
 
 @Entity(

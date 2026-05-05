@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -21,9 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d2d.racecomputer.core.domain.model.LapRecord
+import com.d2d.racecomputer.ui.RaceLogListRow
 import com.d2d.racecomputer.ui.RaceViewModel
+import com.d2d.racecomputer.ui.activityRaceViewModel
+import com.d2d.racecomputer.ui.chronologicalRaceLog
 import com.d2d.racecomputer.ui.formatSpeedKmhOneDecimal
 import com.d2d.racecomputer.ui.metersToKm
 import com.d2d.racecomputer.ui.metersToKmPlain
@@ -32,7 +35,7 @@ import com.d2d.racecomputer.ui.toClock
 @Composable
 fun SummaryScreen(
     onBackToSetup: () -> Unit,
-    vm: RaceViewModel = viewModel(),
+    vm: RaceViewModel = activityRaceViewModel(),
 ) {
     val snapshot = vm.snapshot.collectAsStateWithLifecycle().value
     val moving = (snapshot.elapsedMillis - snapshot.stopStats.totalStoppedMillis).coerceAtLeast(0L)
@@ -60,6 +63,13 @@ fun SummaryScreen(
                     "Slowest Lap: ${(snapshot.laps.maxByOrNull { it.lapTimeMillis }?.lapTimeMillis ?: 0L).toClock()}",
                 )
                 Text("Stop Count: ${snapshot.stopStats.stopCount}")
+                Text("Pit stops: ${snapshot.pitStops.size}")
+                if (snapshot.pitStops.isNotEmpty()) {
+                    Text(
+                        "Total pit time (outside start zone): " +
+                            snapshot.pitStops.sumOf { it.durationMillis }.toClock(),
+                    )
+                }
             }
         }
 
@@ -74,10 +84,13 @@ fun SummaryScreen(
                     .padding(bottom = 8.dp),
             ) {
                 Text(
-                    "Laps",
+                    "Race log",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 4.dp),
                 )
+                val logRows = remember(snapshot.laps, snapshot.pitStops) {
+                    snapshot.chronologicalRaceLog()
+                }
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -88,13 +101,23 @@ fun SummaryScreen(
                     item {
                         LapTableHeaderRow()
                         Text(
-                            text = "Distances km; speeds km/h. Avg = distance ÷ lap time; max = fastest GPS fix in the lap.",
+                            text = "Lap rows: distances km; speeds km/h. Pit rows: time outside the start zone without completing a lap.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
                         )
                     }
-                    items(snapshot.laps) { lap -> LapTableDataRow(lap) }
+                    items(logRows) { row ->
+                        when (row) {
+                            is RaceLogListRow.LapRow -> LapTableDataRow(row.lap)
+                            is RaceLogListRow.PitRow -> Text(
+                                text = "Pit ${row.pit.pitNumber}  ·  outside start zone ${row.pit.durationMillis.toClock()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.padding(vertical = 6.dp),
+                            )
+                        }
+                    }
                 }
             }
         }

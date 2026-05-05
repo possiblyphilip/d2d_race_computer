@@ -30,8 +30,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d2d.racecomputer.core.domain.model.RaceSettings
+import com.d2d.racecomputer.ui.activityRaceViewModel
+import com.d2d.racecomputer.core.domain.model.raceDurationMillisFromHoursText
 import com.d2d.racecomputer.ui.RaceViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -41,7 +42,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun SetupScreen(
     onStartRace: () -> Unit,
-    vm: RaceViewModel = viewModel(),
+    vm: RaceViewModel = activityRaceViewModel(),
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -65,7 +66,7 @@ fun SetupScreen(
             minLapTimeMillis = ((minTimeMin.text.toLongOrNull() ?: 10L) * 60_000L),
             minLapDistanceMeters = minDistM.text.toDoubleOrNull() ?: 2000.0,
             stopSpeedThresholdMps = ((stopKmh.text.toDoubleOrNull() ?: 3.2) / 3.6),
-            raceDurationMillis = (raceHours.text.toLongOrNull() ?: 12L) * 3_600_000L,
+            raceDurationMillis = raceDurationMillisFromHoursText(raceHours.text),
             gpsUpdateMs = (updateSec.text.toLongOrNull() ?: 1L) * 1000L,
         )
         vm.saveSettings(settings)
@@ -154,8 +155,8 @@ fun SetupScreen(
         NumericSetupField(
             value = raceHours,
             onValueChange = { raceHours = it },
-            label = "Race Duration (hours)",
-            keyboardType = KeyboardType.Number,
+            label = "Race Duration (hours, decimals ok)",
+            keyboardType = KeyboardType.Decimal,
         )
         NumericSetupField(
             value = updateSec,

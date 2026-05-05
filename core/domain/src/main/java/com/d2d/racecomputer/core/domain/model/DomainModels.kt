@@ -30,6 +30,8 @@ data class LapRecord(
     val stoppedTimeMillis: Long,
     /** Peak reported GPS speed during the lap (m/s); coerced ≥ 0. */
     val maxSpeedMps: Double = 0.0,
+    /** Wall time when this lap was recorded (re-entering the zone); used to merge with pit rows. */
+    val completedAtMillis: Long = 0L,
 ) {
     /** Average speed over wall-clock lap time (km/h); null if lap time is zero. */
     fun averageSpeedKmh(): Double? {
@@ -40,6 +42,13 @@ data class LapRecord(
 
     fun maxSpeedKmh(): Double = maxOf(0.0, maxSpeedMps) * 3.6
 }
+
+/** Time spent outside the start/finish zone without completing a lap (short lap / pit). */
+data class PitStopRecord(
+    val pitNumber: Int,
+    val durationMillis: Long,
+    val completedAtMillis: Long,
+)
 
 data class StopStats(
     val totalStoppedMillis: Long = 0L,
@@ -64,4 +73,7 @@ data class RaceSnapshot(
     val currentStopDurationMillis: Long = 0L,
     /** Latest GPS-derived speed from the most recent fix (m/s); UI typically shows km/h. */
     val currentSpeedMps: Double = 0.0,
+    /** True when the rider is inside the start/finish lap zone (enter/exit radius logic). */
+    val isInStartFinishZone: Boolean = false,
+    val pitStops: List<PitStopRecord> = emptyList(),
 )

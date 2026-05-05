@@ -4,9 +4,11 @@ import com.d2d.racecomputer.core.data.db.RaceDao
 import com.d2d.racecomputer.core.data.db.entities.GpsPointEntity
 import com.d2d.racecomputer.core.data.db.entities.LapRecordEntity
 import com.d2d.racecomputer.core.data.db.entities.PitNoteEntity
+import com.d2d.racecomputer.core.data.db.entities.PitStopEntity
 import com.d2d.racecomputer.core.data.db.entities.RaceSessionEntity
 import com.d2d.racecomputer.core.domain.model.GpsSample
 import com.d2d.racecomputer.core.domain.model.LapRecord
+import com.d2d.racecomputer.core.domain.model.PitStopRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -56,6 +58,19 @@ class RaceRepository(private val raceDao: RaceDao) {
                 movingTimeMillis = lap.movingTimeMillis,
                 stoppedTimeMillis = lap.stoppedTimeMillis,
                 maxSpeedMps = lap.maxSpeedMps,
+                completedAtMillis = lap.completedAtMillis,
+            ),
+        )
+    }
+
+    suspend fun savePitStop(pit: PitStopRecord) {
+        val raceId = _activeRaceId.value ?: return
+        raceDao.insertPitStop(
+            PitStopEntity(
+                raceId = raceId,
+                pitNumber = pit.pitNumber,
+                durationMillis = pit.durationMillis,
+                completedAtMillis = pit.completedAtMillis,
             ),
         )
     }
